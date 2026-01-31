@@ -1,42 +1,54 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import KeplerGl from '@kepler.gl/components';
+import { ThemeProvider } from "styled-components";
+import { theme } from "@kepler.gl/styles";
+import KeplerGl from "@kepler.gl/components";
 import { addDataToMap } from "@kepler.gl/actions";
-import AutoSizer from "react-virtualized/dist/commonjs/AutoSizer";
+import { processGeojson } from "@kepler.gl/processors";
+
+// Required for Vite/ESM environments
+if (typeof window !== "undefined") {
+  window.global = window;
+}
 
 export default function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    (async () => {
-      const res = await fetch("/data/sidewalks.geojson");
-      const geojson = await res.json();
-
-      dispatch(
-        addDataToMap({
-          datasets: {
-            info: { label: "Sidewalks", id: "sidewalks" },
-            data: geojson,
-          },
-          // NOTE: it's `options` (plural) in most Kepler builds
-          options: { centerMap: true, readOnly: false },
-        })
-      );
-    })();
+    async function loadBoston() {
+      try {
+        const response = await fetch("/boston_accessible_streets.json");
+        if (!response.ok) throw new Error("File not found in /public");
+        
+        const data = await response.json();
+        const keplerData = processGeojson(data);
+        
+        dispatch(
+          addDataToMap({
+            datasets: [{
+              info: { label: "Boston Streets", id: "boston_map" },
+              data: keplerData
+            }],
+            options: { centerMap: true }
+          })
+        );
+      } catch (err) {
+        console.error("Kepler Load Error:", err);
+      }
+    }
+    loadBoston();
   }, [dispatch]);
 
   return (
-    <div style={{ position: "absolute", inset: 0 }}>
-      <AutoSizer>
-        {({ width, height }) => (
-          <KeplerGl
-            id="foo"
-            mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
-            width={width}
-            height={height}
-          />
-        )}
-      </AutoSizer>
-    </div>
+    <ThemeProvider theme={theme}>
+      <div style={{ width: "100vw", height: "100vh" }}>
+        <KeplerGl
+          id="map"
+          mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+          width={window.innerWidth}
+          height={window.innerHeight}
+        />
+      </div>
+    </ThemeProvider>
   );
 }
