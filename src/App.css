@@ -1,42 +1,76 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.app-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.accessibility-overlay {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 300px;
+  z-index: 1000; /* Ensure this is higher than Kepler layers */
+  background: rgba(255, 255, 255, 0.98);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+  color: #111;
+  text-align: left;
+  font-family: -apple-system, system-ui, sans-serif;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.overlay-title {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+  font-weight: 800;
 }
 
-.card {
-  padding: 2em;
+.filter-group {
+  margin-bottom: 18px;
+  padding-bottom: 15px;
+  border-bottom: 1.5px solid #eee; /* Light version of your sketch's red lines */
 }
 
-.read-the-docs {
-  color: #888;
+.filter-group.last {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.group-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #444;
+}
+
+.checkbox-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.checkbox-list label {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.bold-label {
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+input[type="range"] {
+  width: 100%;
+  cursor: pointer;
 }
