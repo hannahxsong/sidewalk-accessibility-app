@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import KeplerGl from "@kepler.gl/components";
+import KeplerGl from '@kepler.gl/components';
 import { addDataToMap } from "@kepler.gl/actions";
 import AutoSizer from "react-virtualized/dist/commonjs/AutoSizer";
 
@@ -30,7 +30,7 @@ export default function App() {
       <AutoSizer>
         {({ width, height }) => (
           <KeplerGl
-            id="map"
+            id="foo"
             mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
             width={width}
             height={height}
