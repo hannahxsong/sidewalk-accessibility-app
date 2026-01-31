@@ -12,14 +12,18 @@
   "dependencies": {
     "@kepler.gl/actions": "^3.2.5",
     "@kepler.gl/components": "^3.2.5",
+    "@kepler.gl/processors": "^3.2.5",
     "@kepler.gl/reducers": "^3.2.5",
     "@turf/invariant": "^7.3.3",
+    "kepler.gl": "^3.2.5",
     "mapbox-gl": "^3.18.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-palm": "^3.3.11",
     "react-redux": "^9.2.0",
     "react-virtualized": "^9.22.6",
-    "redux": "^5.0.1"
+    "redux": "^5.0.1",
+    "styled-components": "^6.3.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
