@@ -44,6 +44,7 @@ On the technical side, we all gained invaluable experience not only with using R
 
 As many factors that may affect sidewalk accessibility—such as presence of snow—need to be updated in real-time, we hope to implement a feature where users can update the live status of the sidewalk on a day-to-day basis. The attributes of each sidewalk will be updated accordingly, and the algorithm will be able to give more accurate routing recommendations for users with disabilities. In addition, as we improve the functionalities of the program, we hope to expand our reach to more and more cities, not just Boston.
 
+**Link to YouTube Demo Video:**
 ---
 
 
