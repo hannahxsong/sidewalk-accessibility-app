@@ -34,6 +34,7 @@ export default function App() {
   const [inclineValue, setInclineValue] = useState(8.0);
   const [riskValue, setRiskValue] = useState(0);
   const [selectedMaterials, setSelectedMaterials] = useState(["CC", "CB", "BC", "BR", "Other"]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Defined outside to ensure IDs like 'r_f' are identical across all dispatches
   const INITIAL_CONFIG = {
@@ -79,6 +80,27 @@ export default function App() {
     },
     mapStyle: { styleType: "voyager" }
   };
+
+  useEffect(() => {
+    // Center the geocoder/search bar (positioned to avoid logo)
+    const style = document.createElement('style');
+    style.textContent = `
+      .kg-geocoder-input-container,
+      .kg-geocoder {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        top: 20px !important;
+        right: auto !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -355,53 +377,196 @@ export default function App() {
     else setEndPoint(endPoint ? null : { lng: longitude, lat: latitude });
   };
 
+  const materialLabels = {
+    "BR": "Brick",
+    "CC": "Concrete", 
+    "BC": "Asphalt",
+    "Other": "Other"
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <div className="app-container">
-        <aside className="accessibility-overlay">
-          <h2 className="overlay-title">Routing</h2>
-          <div className="routing-controls">
-            <button className="nav-btn" onClick={() => togglePoint('start')}>{startPoint ? "Start Set" : "Set Start Location"}</button>
-            <button className="nav-btn" onClick={() => togglePoint('end')}>{endPoint ? "End Set" : "Set End Location"}</button>
-            {startPoint && endPoint && <button className="find-route-btn" onClick={calculateRoute}>Find Accessible Route</button>}
-            {(startPoint || endPoint) && (
-              <button className="clear-btn" onClick={resetMap}>Clear & Reset All</button>
-            )}
-          </div>
-          <hr className="divider" />
-          <h2 className="overlay-title">Accessibility Filters</h2>
-          <div className="filter-group">
-            <span className="group-label">Min Condition (SCI): {riskValue}</span>
-            <input type="range" min="0" max="100" className="custom-slider" value={riskValue} onChange={(e) => {
-              const val = Number(e.target.value);
-              setRiskValue(val);
-              dispatch(setFilter(3, 'value', [val, 100]));
-            }} />
-          </div>
-          <div className="filter-group">
-            <span className="group-label">Floor types</span>
-            <div className="checkbox-list">
-              {["CC", "BC", "BR", "Other"].map(m => (
-                <label key={m}><input type="checkbox" checked={selectedMaterials.includes(m)} onChange={() => handleMaterialChange(m)} /> {m === "CC" ? "Concrete" : m === "BC" ? "Asphalt" : m === "BR" ? "Brick" : "Other"}</label>
-              ))}
+        {/* Logo in top right */}
+        <div className="top-logo">
+          <img src="/emerald-path-logo.svg" alt="Emerald Path Logo" />
+        </div>
+
+        {/* About Us button in bottom right */}
+        <button className="about-us-btn">ABOUT US</button>
+
+        <aside className={`filter-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+          {isSidebarCollapsed ? (
+            <div className="collapsed-sidebar-content">
+              <h1 className="collapsed-title">EMERALD PATH</h1>
+              <button 
+                className="expand-btn" 
+                aria-label="Expand sidebar"
+                onClick={() => setIsSidebarCollapsed(false)}
+              >
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                  <path d="M6 3L9 7.5L6 12" stroke="#064e3b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="sidebar-header">
+                <h1 className="sidebar-title">EMERALD PATH</h1>
+                <button 
+                  className="collapse-btn" 
+                  aria-label="Collapse sidebar"
+                  onClick={() => setIsSidebarCollapsed(true)}
+                >
+                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                    <path d="M9 3L6 7.5L9 12" stroke="#064e3b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+
+          {/* Floor Surface Filter */}
+          <div className="filter-section">
+            <div className="filter-section-header">
+              <div className="filter-icon">🏗️</div>
+              <h3 className="filter-title">Floor Surface</h3>
+            </div>
+            <div className="material-buttons">
+              {["BR", "CC", "BC", "Other"].map(material => {
+                const isSelected = selectedMaterials.includes(material);
+                const iconMap = {
+                  "BR": "/brick-icon.svg",
+                  "CC": "/concrete-icon.svg",
+                  "BC": "/asphalt-icon.svg",
+                  "Other": null
+                };
+                return (
+                  <button
+                    key={material}
+                    className={`material-btn ${isSelected ? 'selected' : ''}`}
+                    onClick={() => handleMaterialChange(material)}
+                  >
+                    {iconMap[material] && (
+                      <img 
+                        src={iconMap[material]} 
+                        alt={`${materialLabels[material]} icon`}
+                        className="material-icon"
+                        style={{ display: 'block' }}
+                        onError={(e) => {
+                          console.error('Failed to load icon:', iconMap[material], e);
+                        }}
+                        onLoad={() => {
+                          console.log('Icon loaded:', iconMap[material]);
+                        }}
+                      />
+                    )}
+                    <span>{materialLabels[material]}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <div className="filter-group">
-            <span className="group-label">Max Incline: {inclineValue}%</span>
-            <input type="range" min="0" max="20" step="0.1" className="custom-slider" value={inclineValue} onChange={(e) => {
+
+          {/* Path Width Filter */}
+          <div className="filter-section">
+            <div className="filter-section-header">
+              <div className="filter-icon">↔️</div>
+              <h3 className="filter-title">Path Width</h3>
+              <span className="filter-value">{widthValue.toFixed(1)} ft.</span>
+            </div>
+            <div className="slider-container">
+              <span className="slider-label">0 ft.</span>
+              <input 
+                type="range" 
+                min="0" 
+                max="15" 
+                step="0.1" 
+                className="emerald-slider" 
+                value={widthValue} 
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setWidthValue(val);
+                  dispatch(setFilter(2, 'value', [val, 50]));
+                }} 
+              />
+              <span className="slider-label">15 ft.</span>
+            </div>
+          </div>
+
+          {/* Max Incline Filter */}
+          <div className="filter-section">
+            <div className="filter-section-header">
+              <div className="filter-icon">📐</div>
+              <h3 className="filter-title">Max Incline</h3>
+              <span className="filter-value">{inclineValue.toFixed(0)}%</span>
+            </div>
+            <div className="slider-container">
+              <span className="slider-label">0%</span>
+              <input 
+                type="range" 
+                min="0" 
+                max="20" 
+                step="0.1" 
+                className="emerald-slider" 
+                value={inclineValue} 
+                onChange={(e) => {
               const val = Number(e.target.value);
               setInclineValue(val);
               dispatch(setFilter(1, 'value', [0, val]));
-            }} />
+                }} 
+              />
+              <span className="slider-label">20%</span>
+            </div>
           </div>
-          <div className="filter-group">
-            <span className="group-label">Min Width: {widthValue}ft</span>
-            <input type="range" min="0" max="15" step="0.1" className="custom-slider" value={widthValue} onChange={(e) => {
+
+          {/* Safeness Filter */}
+          <div className="filter-section">
+            <div className="filter-section-header">
+              <div className="filter-icon">🛡️</div>
+              <h3 className="filter-title">Safeness</h3>
+              <span className="filter-value">{riskValue.toFixed(0)}%</span>
+            </div>
+            <div className="slider-container">
+              <span className="slider-label">0%</span>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                className="emerald-slider" 
+                value={riskValue} 
+                onChange={(e) => {
               const val = Number(e.target.value);
-              setWidthValue(val);
-              dispatch(setFilter(2, 'value', [val, 50]));
-            }} />
+                  setRiskValue(val);
+                  dispatch(setFilter(3, 'value', [val, 100]));
+                }} 
+              />
+              <span className="slider-label">100%</span>
+            </div>
           </div>
+
+          {/* Routing Controls */}
+          <div className="routing-section">
+            <h3 className="routing-title">Routing</h3>
+            <div className="routing-controls">
+              <button className="route-btn" onClick={() => togglePoint('start')}>
+                {startPoint ? "Start Set" : "Set Start Location"}
+              </button>
+              <button className="route-btn" onClick={() => togglePoint('end')}>
+                {endPoint ? "End Set" : "Set End Location"}
+              </button>
+              {startPoint && endPoint && (
+                <button className="find-route-btn" onClick={calculateRoute}>
+                  Find Accessible Route
+                </button>
+              )}
+              {(startPoint || endPoint) && (
+                <button className="clear-btn" onClick={resetMap}>
+                  Clear & Reset All
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+        )}
         </aside>
         <KeplerGl id="map" mapboxApiAccessToken={import.meta.env.VITE_MAPBOX_TOKEN} width={window.innerWidth} height={window.innerHeight} style={{position: 'absolute', top: 0, left: 0}} />
       </div>
