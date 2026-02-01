@@ -41,18 +41,19 @@ export default function App() {
       layers: [{
         id: "sidewalk_layer", 
         type: "geojson",
+        isVisible: true,
         config: { 
           dataId: "boston_sidewalks", 
           label: "Sidewalks", 
-          colorField: { name: "MATERIAL", type: "string" }, // Lock color to Material
+          colorField: { name: "_fixedColor", type: "string" }, // Fixed color field
           visConfig: { 
-            thickness: 1, 
+            thickness: 0.1, 
             opacity: 0.3,
             colorRange: {
-                name: 'Custom Palette',
-                type: 'qualitative',
-                category: 'Uber',
-                colors: ['#5A1846', '#900C3F', '#C70039', '#E36139', '#FFC300']
+              name: 'Custom Palette',
+              type: 'qualitative',
+              category: 'Uber',
+              colors: ['#17B8BE'] // Single fixed color (teal/blue)
             }
           } 
         }
@@ -65,7 +66,15 @@ export default function App() {
       ],
       interactionConfig: { 
         geocoder: { enabled: true }, 
-        tooltip: { enabled: true } 
+        tooltip: { 
+          enabled: true,
+          config: {
+            fieldsToShow: {
+              boston_sidewalks: ['MATERIAL', 'SWK_SLOPE', 'SWK_WIDTH', 'SCI_VAL']
+            },
+            compareMode: false
+          }
+        } 
       }
     },
     mapStyle: { styleType: "voyager" }
@@ -78,17 +87,35 @@ export default function App() {
         const rawData = await response.json();
         setRawSidewalkData(rawData);
         
-        const processedFeatures = rawData.features.map(f => ({
-          ...f,
-          properties: { 
-            ...f.properties, 
-            MATERIAL: (f.properties.MATERIAL || "Other").trim(),
-            Material_Full: materialNames[f.properties.MATERIAL?.trim()] || "Other",
-            SWK_WIDTH: parseFloat(f.properties.SWK_WIDTH) || 0,
-            SWK_SLOPE: parseFloat(f.properties.SWK_SLOPE) || 0,
-            SCI_VAL: parseFloat(f.properties.SCI) || 0
+        const processedFeatures = rawData.features.map(f => {
+          // Convert polygons to linestrings to remove fill
+          let geometry = f.geometry;
+          if (geometry.type === 'Polygon') {
+            geometry = {
+              type: 'LineString',
+              coordinates: geometry.coordinates[0]
+            };
+          } else if (geometry.type === 'MultiPolygon') {
+            geometry = {
+              type: 'MultiLineString',
+              coordinates: geometry.coordinates.map(poly => poly[0])
+            };
           }
-        }));
+          
+          return {
+            ...f,
+            geometry,
+            properties: { 
+              _fixedColor: "fixed", // ALWAYS first - constant field for fixed color (required for coloring)
+              ...f.properties, 
+              MATERIAL: (f.properties.MATERIAL || "Other").trim(),
+              Material_Full: materialNames[f.properties.MATERIAL?.trim()] || "Other",
+              SWK_WIDTH: parseFloat(f.properties.SWK_WIDTH) || 0,
+              SWK_SLOPE: parseFloat(f.properties.SWK_SLOPE) || 0,
+              SCI_VAL: parseFloat(f.properties.SCI) || 0
+            }
+          };
+        });
 
         dispatch(addDataToMap({
           datasets: [{
@@ -111,15 +138,57 @@ export default function App() {
     setRiskValue(0);
     setSelectedMaterials(["CC", "CB", "BC", "BR", "Other"]);
 
-    // Force a full re-dispatch to clean the slate and keep IDs stable
+    if (!rawSidewalkData) return;
+
+    // Process features exactly like in the initial load
+    const processedFeatures = rawSidewalkData.features.map(f => {
+      // Convert polygons to linestrings to remove fill
+      let geometry = f.geometry;
+      if (geometry.type === 'Polygon') {
+        geometry = {
+          type: 'LineString',
+          coordinates: geometry.coordinates[0]
+        };
+      } else if (geometry.type === 'MultiPolygon') {
+        geometry = {
+          type: 'MultiLineString',
+          coordinates: geometry.coordinates.map(poly => poly[0])
+        };
+      }
+      
+      return {
+        ...f,
+        geometry,
+        properties: { 
+          ...f.properties, 
+          MATERIAL: (f.properties.MATERIAL || "Other").trim(),
+          Material_Full: materialNames[f.properties.MATERIAL?.trim()] || "Other",
+          SWK_WIDTH: parseFloat(f.properties.SWK_WIDTH) || 0,
+          SWK_SLOPE: parseFloat(f.properties.SWK_SLOPE) || 0,
+          SCI_VAL: parseFloat(f.properties.SCI) || 0,
+          _fixedColor: "fixed" // Constant field for fixed color
+        }
+      };
+    });
+
+    // Use the EXACT same config as initial load
     dispatch(addDataToMap({
       datasets: [{
         info: { label: "Boston Sidewalks", id: "boston_sidewalks" },
-        data: processGeojson(rawSidewalkData)
+        data: processGeojson({ ...rawSidewalkData, features: processedFeatures })
       }],
       options: { centerMap: false, keepExistingConfig: false },
       config: INITIAL_CONFIG
     }));
+
+    // Explicitly reset all filters after a brief delay to ensure config is applied
+    // The INITIAL_CONFIG should handle the layer configuration, but we ensure filters are set
+    setTimeout(() => {
+      dispatch(setFilter(0, 'value', ["CC", "CB", "BC", "BR", "Other"])); // Material filter
+      dispatch(setFilter(1, 'value', [0, 8.0])); // Incline filter
+      dispatch(setFilter(2, 'value', [1.2, 50])); // Width filter
+      dispatch(setFilter(3, 'value', [0, 100])); // SCI filter
+    }, 100);
   };
 
   const calculateRoute = () => {
@@ -183,22 +252,90 @@ export default function App() {
           highFidelityCoords.push(turf.centroid(currentFeat).geometry.coordinates);
         }
       }
-      const routeLine = turf.lineString(highFidelityCoords);
+      const routeLine = turf.lineString(highFidelityCoords, { _fixedColor: "fixed" });
+      
+      // Get the actual start and end coordinates from the route
+      const routeCoords = routeLine.geometry.coordinates;
+      const actualStartCoord = routeCoords[0];
+      const actualEndCoord = routeCoords[routeCoords.length - 1];
+      
+      // Create point features for start and end markers at the actual route endpoints
+      const startMarker = turf.point(actualStartCoord, { 
+        markerType: 'start',
+        label: 'Start',
+        icon: 'marker'
+      });
+      const endMarker = turf.point(actualEndCoord, { 
+        markerType: 'end',
+        label: 'End',
+        icon: 'marker'
+      });
 
       dispatch(addDataToMap({
-        datasets: [{ 
-          info: { label: "Grounded Path", id: "active_route" }, 
-          data: processGeojson(turf.featureCollection([routeLine])) 
-        }],
+        datasets: [
+          { 
+            info: { label: "Grounded Path", id: "active_route" }, 
+            data: processGeojson(turf.featureCollection([routeLine])) 
+          },
+          {
+            info: { label: "Route Markers", id: "route_markers" },
+            data: processGeojson(turf.featureCollection([startMarker, endMarker]))
+          }
+        ],
         config: { 
           visState: { 
-            layers: [{ 
-              id: "r_l", type: "geojson", 
-              config: { 
-                dataId: "active_route", label: "Walking Path",
-                visConfig: { thickness: 5, strokeColor: [241, 196, 15], opacity: 1 }
-              } 
-            }],
+            layers: [
+              { 
+                id: "r_l", type: "geojson", 
+                config: { 
+                  dataId: "active_route", label: "Walking Path",
+                  visConfig: { 
+                    thickness: 5, 
+                    opacity: 1,
+                    colorRange: {
+                      name: 'Custom Palette',
+                      type: 'qualitative',
+                      category: 'Uber',
+                      colors: ['#50C878'] // Emerald green
+                    }
+                  },
+                  colorField: { name: "_fixedColor", type: "string" }
+                } 
+              },
+              {
+                id: "route_markers_layer", type: "icon",
+                config: {
+                  dataId: "route_markers", label: "Route Markers",
+                  visConfig: {
+                    iconSize: 40,
+                    iconSizeRange: [20, 60],
+                    opacity: 1,
+                    color: [231, 76, 60], // Red color [R, G, B]
+                    fixedRadius: false
+                  },
+                  iconField: {
+                    name: 'icon',
+                    type: 'string'
+                  },
+                  iconMapping: {
+                    marker: {
+                      icon: 'marker',
+                      category: 'default'
+                    }
+                  },
+                  textLabel: [{
+                    field: {
+                      name: 'label',
+                      type: 'string'
+                    },
+                    color: [255, 255, 255],
+                    size: 12,
+                    offset: [0, 5],
+                    anchor: 'bottom'
+                  }]
+                }
+              }
+            ],
             interactionConfig: { geocoder: { enabled: true } }
           } 
         }
