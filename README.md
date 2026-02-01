@@ -6,7 +6,7 @@
 
 ## Inspiration
 
-Last week, unprecented amounts of snow and ice ravaged cities across America. As students who mainly travel by foot, we have experienced firsthand the challenges of traversing through underplowed sidewalks and squeezing through piles of snow to simply cross the street. While we are privileged to not have to shoulder this burden on a regular basis, this is reality for millions of people worldwide.
+Last week, unprecedented amounts of snow and ice ravaged cities across America. As students who mainly travel by foot, we have experienced firsthand the challenges of traversing through underplowed sidewalks and squeezing through piles of snow to simply cross the street. While we are privileged to not have to shoulder this burden on a regular basis, this is reality for millions of people worldwide.
 
 Modern metropolises are known for their scale and connectivity, but urban infrastructure doesn’t take into account those with mobility needs. For these users, there are many unknown risks with taking sidewalks, leaving **12.2% of U.S. adults (roughly 1 in 8) who live with a mobility disability with “concrete anxiety.”** Up to **48% of sidewalks remain inaccessible,** which forces these individuals to stay home or get injured.  There is a lack of critical data on floor surfaces, path widths, and steep inclines, all of which can greatly impact safe city commute.
 
