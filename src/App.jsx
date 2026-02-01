@@ -8,6 +8,7 @@ import { processGeojson } from "@kepler.gl/processors";
 import * as turf from "@turf/turf";
 import createGraph from 'ngraph.graph';
 import path from 'ngraph.path';
+import AboutUs from "./AboutUs";
 import "./App.css";
 
 if (typeof window !== "undefined") {
@@ -35,6 +36,7 @@ export default function App() {
   const [riskValue, setRiskValue] = useState(0);
   const [selectedMaterials, setSelectedMaterials] = useState(["CC", "CB", "BC", "BR", "Other"]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showAboutUs, setShowAboutUs] = useState(false);
 
   // Defined outside to ensure IDs like 'r_f' are identical across all dispatches
   const INITIAL_CONFIG = {
@@ -384,6 +386,10 @@ export default function App() {
     "Other": "Other"
   };
 
+  if (showAboutUs) {
+    return <AboutUs onBack={() => setShowAboutUs(false)} />;
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <div className="app-container">
@@ -393,7 +399,7 @@ export default function App() {
         </div>
 
         {/* About Us button in bottom right */}
-        <button className="about-us-btn">ABOUT US</button>
+        <button className="about-us-btn" onClick={() => setShowAboutUs(true)}>ABOUT US</button>
 
         <aside className={`filter-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
           {isSidebarCollapsed ? (
