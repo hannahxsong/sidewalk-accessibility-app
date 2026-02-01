@@ -341,6 +341,50 @@
   background: #c0392b;
 }
 
+/* Route Statistics */
+.route-stats {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(6, 78, 59, 0.05);
+  border: 1px solid #064e3b;
+  border-radius: 8px;
+}
+
+.route-stats-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  color: #064e3b;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.route-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(6, 78, 59, 0.1);
+}
+
+.route-stat-item:last-child {
+  border-bottom: none;
+}
+
+.route-stat-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #064e3b;
+  font-weight: 500;
+}
+
+.route-stat-value {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #064e3b;
+  font-weight: bold;
+}
+
 /* Scrollbar styling for sidebar */
 .filter-sidebar::-webkit-scrollbar {
   width: 8px;
@@ -398,3 +442,31 @@
 .about-us-btn:hover {
   background: rgba(6, 78, 59, 0.1);
 }
+
+/* Hide Kepler.gl default legend/side panel */
+.kg-side-panel,
+[class*="side-panel"],
+[class*="layer-panel"],
+[class*="legend-panel"] {
+  display: none !important;
+}
+
+/* Hide Kepler.gl default map control buttons (the four icons) */
+[class*="map-control"],
+[class*="map-controls"],
+[class*="map-control-button"],
+.kg-map-control-button,
+[data-testid*="map-control"],
+div[class*="map-control"] > button,
+div[class*="map-control"] > div {
+  display: none !important;
+}
+
+/* Force emerald green color for sidewalk layer using CSS - last resort override */
+canvas[class*="deckgl"],
+svg[class*="deckgl"] {
+  filter: none !important;
+}
+
+/* Try to override any blue/teal colors with emerald green using CSS filters */
+/* This is a hack but might work if Kepler.gl renders to canvas */

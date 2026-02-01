@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ThemeProvider } from "styled-components";
 import { theme } from "@kepler.gl/styles";
 import KeplerGl from "@kepler.gl/components";
-import { addDataToMap, setFilter } from "@kepler.gl/actions";
+import { addDataToMap, setFilter, updateLayer, updateLayerVisConfig, removeLayer } from "@kepler.gl/actions";
 import { processGeojson } from "@kepler.gl/processors";
 import * as turf from "@turf/turf";
 import createGraph from 'ngraph.graph';
@@ -37,6 +37,7 @@ export default function App() {
   const [selectedMaterials, setSelectedMaterials] = useState(["CC", "CB", "BC", "BR", "Other"]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showAboutUs, setShowAboutUs] = useState(false);
+  const [routeStats, setRouteStats] = useState(null); // { distance, avgIncline, avgWidth }
 
   // Defined outside to ensure IDs like 'r_f' are identical across all dispatches
   const INITIAL_CONFIG = {
@@ -50,13 +51,13 @@ export default function App() {
           label: "Sidewalks", 
           colorField: { name: "_fixedColor", type: "string" }, // Fixed color field
           visConfig: { 
-            thickness: 0.1, 
+            thickness: 0.05, 
             opacity: 0.3,
             colorRange: {
               name: 'Custom Palette',
               type: 'qualitative',
               category: 'Uber',
-              colors: ['#17B8BE'] // Single fixed color (teal/blue)
+              colors: ['#50C878'] // Emerald green
             }
           } 
         }
@@ -78,6 +79,17 @@ export default function App() {
             compareMode: false
           }
         } 
+      }
+    },
+    uiState: {
+      readOnly: true,
+      activeSidePanel: null, // Hide the side panel/legend
+      currentModal: null,
+      mapControls: {
+        visibleLayers: { show: false },
+        mapLegend: { show: false },
+        toggle3d: { show: false },
+        splitMap: { show: false }
       }
     },
     mapStyle: { styleType: "voyager" }
@@ -103,6 +115,28 @@ export default function App() {
       }
     };
   }, []);
+
+  // Remove route layers if they exist when not needed
+  useEffect(() => {
+    if (!keplerState?.visState?.layers) return;
+    
+    const routeLayer = keplerState.visState.layers.find(l => l.id === 'r_l');
+    const markersLayer = keplerState.visState.layers.find(l => l.id === 'route_markers_layer');
+    
+    // If route layers exist but we don't have route stats, remove them
+    if ((routeLayer || markersLayer) && !routeStats && !startPoint && !endPoint) {
+      if (routeLayer) {
+        try {
+          dispatch(removeLayer('r_l'));
+        } catch (e) {}
+      }
+      if (markersLayer) {
+        try {
+          dispatch(removeLayer('route_markers_layer'));
+        } catch (e) {}
+      }
+    }
+  }, [keplerState, routeStats, startPoint, endPoint, dispatch]);
 
   useEffect(() => {
     async function loadData() {
@@ -149,6 +183,7 @@ export default function App() {
           options: { centerMap: true, keepExistingConfig: false },
           config: INITIAL_CONFIG
         }));
+        
       } catch (err) { console.error(err); }
     }
     loadData();
@@ -161,8 +196,17 @@ export default function App() {
     setInclineValue(8.0);
     setRiskValue(0);
     setSelectedMaterials(["CC", "CB", "BC", "BR", "Other"]);
+    setRouteStats(null);
 
     if (!rawSidewalkData) return;
+
+    // Remove route layers first
+    try {
+      dispatch(removeLayer('r_l')); // Route line layer
+      dispatch(removeLayer('route_markers_layer')); // Route markers layer
+    } catch (e) {
+      // Layers might not exist, that's okay
+    }
 
     // Process features exactly like in the initial load
     const processedFeatures = rawSidewalkData.features.map(f => {
@@ -184,18 +228,18 @@ export default function App() {
         ...f,
         geometry,
         properties: { 
+          _fixedColor: "fixed", // ALWAYS first - constant field for fixed color
           ...f.properties, 
           MATERIAL: (f.properties.MATERIAL || "Other").trim(),
           Material_Full: materialNames[f.properties.MATERIAL?.trim()] || "Other",
           SWK_WIDTH: parseFloat(f.properties.SWK_WIDTH) || 0,
           SWK_SLOPE: parseFloat(f.properties.SWK_SLOPE) || 0,
-          SCI_VAL: parseFloat(f.properties.SCI) || 0,
-          _fixedColor: "fixed" // Constant field for fixed color
+          SCI_VAL: parseFloat(f.properties.SCI) || 0
         }
       };
     });
 
-    // Use the EXACT same config as initial load
+    // Reset with full config to ensure emerald green color is set from the start
     dispatch(addDataToMap({
       datasets: [{
         info: { label: "Boston Sidewalks", id: "boston_sidewalks" },
@@ -234,6 +278,7 @@ export default function App() {
     });
 
     if (localFeatures.length === 0) {
+      setRouteStats(null);
       alert("No accessible sidewalks found.");
       return;
     }
@@ -277,6 +322,24 @@ export default function App() {
         }
       }
       const routeLine = turf.lineString(highFidelityCoords, { _fixedColor: "fixed" });
+      
+      // Calculate route statistics
+      const totalDistance = turf.length(routeLine, { units: 'miles' }); // Distance in miles
+      const totalIncline = orderedPath.reduce((sum, feat) => {
+        return sum + (parseFloat(feat.properties.SWK_SLOPE) || 0);
+      }, 0);
+      const avgIncline = orderedPath.length > 0 ? totalIncline / orderedPath.length : 0;
+      
+      const totalWidth = orderedPath.reduce((sum, feat) => {
+        return sum + (parseFloat(feat.properties.SWK_WIDTH) || 0);
+      }, 0);
+      const avgWidth = orderedPath.length > 0 ? totalWidth / orderedPath.length : 0;
+      
+      setRouteStats({
+        distance: totalDistance,
+        avgIncline: avgIncline,
+        avgWidth: avgWidth
+      });
       
       // Get the actual start and end coordinates from the route
       const routeCoords = routeLine.geometry.coordinates;
@@ -364,7 +427,22 @@ export default function App() {
           } 
         }
       }));
-    } else { alert("Could not connect segments."); }
+      
+      // Explicitly set the route layer color to emerald green after adding route
+      setTimeout(() => {
+        dispatch(updateLayerVisConfig('r_l', {
+          colorRange: {
+            name: 'Custom Palette',
+            type: 'qualitative',
+            category: 'Uber',
+            colors: ['#50C878'] // Emerald green
+          }
+        }));
+      }, 100);
+    } else { 
+      setRouteStats(null);
+      alert("Could not connect segments."); 
+    }
   };
 
   const handleMaterialChange = (code) => {
@@ -570,6 +648,25 @@ export default function App() {
                 </button>
               )}
             </div>
+            
+            {/* Route Statistics */}
+            {routeStats && (
+              <div className="route-stats">
+                <h4 className="route-stats-title">Route Statistics</h4>
+                <div className="route-stat-item">
+                  <span className="route-stat-label">Total Distance:</span>
+                  <span className="route-stat-value">{routeStats.distance.toFixed(2)} mi</span>
+                </div>
+                <div className="route-stat-item">
+                  <span className="route-stat-label">Average Incline:</span>
+                  <span className="route-stat-value">{routeStats.avgIncline.toFixed(1)}%</span>
+                </div>
+                <div className="route-stat-item">
+                  <span className="route-stat-label">Average Width:</span>
+                  <span className="route-stat-value">{routeStats.avgWidth.toFixed(1)} ft</span>
+                </div>
+              </div>
+            )}
           </div>
         </>
         )}
