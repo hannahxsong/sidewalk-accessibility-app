@@ -31,6 +31,22 @@ export default function AboutUs({ onBack }) {
               strokeLinejoin="miter"
               strokeDasharray="30 4"
             />
+            <image
+              href="/Untitled_Artwork_5_1-removebg-preview.png"
+              x="146.813"
+              y="-150"
+              width="200"
+              height="200"
+              className="red-shoes"
+            />
+            <image
+              href="/emerald-castle.svg"
+              x="266.469"
+              y="1130.11"
+              width="400"
+              height="400"
+              className="emerald-castle"
+            />
           </svg>
 
           <div className="section what-section">

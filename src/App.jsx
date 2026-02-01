@@ -37,9 +37,8 @@ export default function App() {
   const [selectedMaterials, setSelectedMaterials] = useState(["CC", "CB", "BC", "BR", "Other"]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showAboutUs, setShowAboutUs] = useState(false);
-  const [routeStats, setRouteStats] = useState(null); // { distance, avgIncline, avgWidth }
+  const [routeStats, setRouteStats] = useState(null);
 
-  // Defined outside to ensure IDs like 'r_f' are identical across all dispatches
   const INITIAL_CONFIG = {
     visState: {
       layers: [{
@@ -49,7 +48,7 @@ export default function App() {
         config: { 
           dataId: "boston_sidewalks", 
           label: "Sidewalks", 
-          colorField: { name: "_fixedColor", type: "string" }, // Fixed color field
+          colorField: { name: "_fixedColor", type: "string" },
           visConfig: { 
             thickness: 0.05, 
             opacity: 0.3,
@@ -57,7 +56,7 @@ export default function App() {
               name: 'Custom Palette',
               type: 'qualitative',
               category: 'Uber',
-              colors: ['#50C878'] // Emerald green
+              colors: ['#50C878']
             }
           } 
         }
@@ -83,7 +82,7 @@ export default function App() {
     },
     uiState: {
       readOnly: true,
-      activeSidePanel: null, // Hide the side panel/legend
+      activeSidePanel: null,
       currentModal: null,
       mapControls: {
         visibleLayers: { show: false },
@@ -96,7 +95,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Center the geocoder/search bar (positioned to avoid logo)
     const style = document.createElement('style');
     style.textContent = `
       .kg-geocoder-input-container,
@@ -116,14 +114,12 @@ export default function App() {
     };
   }, []);
 
-  // Remove route layers if they exist when not needed
   useEffect(() => {
     if (!keplerState?.visState?.layers) return;
     
     const routeLayer = keplerState.visState.layers.find(l => l.id === 'r_l');
     const markersLayer = keplerState.visState.layers.find(l => l.id === 'route_markers_layer');
     
-    // If route layers exist but we don't have route stats, remove them
     if ((routeLayer || markersLayer) && !routeStats && !startPoint && !endPoint) {
       if (routeLayer) {
         try {
@@ -146,7 +142,6 @@ export default function App() {
         setRawSidewalkData(rawData);
         
         const processedFeatures = rawData.features.map(f => {
-          // Convert polygons to linestrings to remove fill
           let geometry = f.geometry;
           if (geometry.type === 'Polygon') {
             geometry = {
@@ -164,7 +159,7 @@ export default function App() {
             ...f,
             geometry,
             properties: { 
-              _fixedColor: "fixed", // ALWAYS first - constant field for fixed color (required for coloring)
+              _fixedColor: "fixed",
               ...f.properties, 
               MATERIAL: (f.properties.MATERIAL || "Other").trim(),
               Material_Full: materialNames[f.properties.MATERIAL?.trim()] || "Other",
@@ -200,17 +195,13 @@ export default function App() {
 
     if (!rawSidewalkData) return;
 
-    // Remove route layers first
     try {
-      dispatch(removeLayer('r_l')); // Route line layer
-      dispatch(removeLayer('route_markers_layer')); // Route markers layer
+      dispatch(removeLayer('r_l'));
+      dispatch(removeLayer('route_markers_layer'));
     } catch (e) {
-      // Layers might not exist, that's okay
     }
 
-    // Process features exactly like in the initial load
     const processedFeatures = rawSidewalkData.features.map(f => {
-      // Convert polygons to linestrings to remove fill
       let geometry = f.geometry;
       if (geometry.type === 'Polygon') {
         geometry = {
@@ -228,7 +219,7 @@ export default function App() {
         ...f,
         geometry,
         properties: { 
-          _fixedColor: "fixed", // ALWAYS first - constant field for fixed color
+          _fixedColor: "fixed",
           ...f.properties, 
           MATERIAL: (f.properties.MATERIAL || "Other").trim(),
           Material_Full: materialNames[f.properties.MATERIAL?.trim()] || "Other",
@@ -239,7 +230,6 @@ export default function App() {
       };
     });
 
-    // Reset with full config to ensure emerald green color is set from the start
     dispatch(addDataToMap({
       datasets: [{
         info: { label: "Boston Sidewalks", id: "boston_sidewalks" },
@@ -249,13 +239,11 @@ export default function App() {
       config: INITIAL_CONFIG
     }));
 
-    // Explicitly reset all filters after a brief delay to ensure config is applied
-    // The INITIAL_CONFIG should handle the layer configuration, but we ensure filters are set
     setTimeout(() => {
-      dispatch(setFilter(0, 'value', ["CC", "CB", "BC", "BR", "Other"])); // Material filter
-      dispatch(setFilter(1, 'value', [0, 8.0])); // Incline filter
-      dispatch(setFilter(2, 'value', [1.2, 50])); // Width filter
-      dispatch(setFilter(3, 'value', [0, 100])); // SCI filter
+      dispatch(setFilter(0, 'value', ["CC", "CB", "BC", "BR", "Other"]));
+      dispatch(setFilter(1, 'value', [0, 8.0]));
+      dispatch(setFilter(2, 'value', [1.2, 50]));
+      dispatch(setFilter(3, 'value', [0, 100]));
     }, 100);
   };
 
@@ -323,8 +311,7 @@ export default function App() {
       }
       const routeLine = turf.lineString(highFidelityCoords, { _fixedColor: "fixed" });
       
-      // Calculate route statistics
-      const totalDistance = turf.length(routeLine, { units: 'miles' }); // Distance in miles
+      const totalDistance = turf.length(routeLine, { units: 'miles' });
       const totalIncline = orderedPath.reduce((sum, feat) => {
         return sum + (parseFloat(feat.properties.SWK_SLOPE) || 0);
       }, 0);
@@ -341,12 +328,10 @@ export default function App() {
         avgWidth: avgWidth
       });
       
-      // Get the actual start and end coordinates from the route
       const routeCoords = routeLine.geometry.coordinates;
       const actualStartCoord = routeCoords[0];
       const actualEndCoord = routeCoords[routeCoords.length - 1];
       
-      // Create point features for start and end markers at the actual route endpoints
       const startMarker = turf.point(actualStartCoord, { 
         markerType: 'start',
         label: 'Start',
@@ -383,7 +368,7 @@ export default function App() {
                       name: 'Custom Palette',
                       type: 'qualitative',
                       category: 'Uber',
-                      colors: ['#50C878'] // Emerald green
+                      colors: ['#50C878']
                     }
                   },
                   colorField: { name: "_fixedColor", type: "string" }
@@ -428,14 +413,13 @@ export default function App() {
         }
       }));
       
-      // Explicitly set the route layer color to emerald green after adding route
       setTimeout(() => {
         dispatch(updateLayerVisConfig('r_l', {
           colorRange: {
             name: 'Custom Palette',
             type: 'qualitative',
             category: 'Uber',
-            colors: ['#50C878'] // Emerald green
+            colors: ['#50C878']
           }
         }));
       }, 100);
@@ -471,12 +455,10 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <div className="app-container">
-        {/* Logo in top right */}
         <div className="top-logo">
           <img src="/emerald-path-logo.svg" alt="Emerald Path Logo" />
         </div>
 
-        {/* About Us button in bottom right */}
         <button className="about-us-btn" onClick={() => setShowAboutUs(true)}>ABOUT US</button>
 
         <aside className={`filter-sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
@@ -508,7 +490,6 @@ export default function App() {
                 </button>
               </div>
 
-          {/* Floor Surface Filter */}
           <div className="filter-section">
             <div className="filter-section-header">
               <div className="filter-icon">🏗️</div>
@@ -550,11 +531,10 @@ export default function App() {
             </div>
           </div>
 
-          {/* Path Width Filter */}
           <div className="filter-section">
             <div className="filter-section-header">
               <div className="filter-icon">↔️</div>
-              <h3 className="filter-title">Path Width</h3>
+              <h3 className="filter-title">Min. Path Width</h3>
               <span className="filter-value">{widthValue.toFixed(1)} ft.</span>
             </div>
             <div className="slider-container">
@@ -567,7 +547,7 @@ export default function App() {
                 className="emerald-slider" 
                 value={widthValue} 
                 onChange={(e) => {
-                  const val = Number(e.target.value);
+              const val = Number(e.target.value);
                   setWidthValue(val);
                   dispatch(setFilter(2, 'value', [val, 50]));
                 }} 
@@ -576,11 +556,10 @@ export default function App() {
             </div>
           </div>
 
-          {/* Max Incline Filter */}
           <div className="filter-section">
             <div className="filter-section-header">
               <div className="filter-icon">📐</div>
-              <h3 className="filter-title">Max Incline</h3>
+              <h3 className="filter-title">Max. Incline</h3>
               <span className="filter-value">{inclineValue.toFixed(0)}%</span>
             </div>
             <div className="slider-container">
@@ -602,7 +581,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Safeness Filter */}
           <div className="filter-section">
             <div className="filter-section-header">
               <div className="filter-icon">🛡️</div>
@@ -627,7 +605,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Routing Controls */}
           <div className="routing-section">
             <h3 className="routing-title">Routing</h3>
             <div className="routing-controls">
@@ -649,7 +626,6 @@ export default function App() {
               )}
             </div>
             
-            {/* Route Statistics */}
             {routeStats && (
               <div className="route-stats">
                 <h4 className="route-stats-title">Route Statistics</h4>

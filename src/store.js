@@ -2,11 +2,10 @@ import { createStore, combineReducers, applyMiddleware, compose } from "redux";
 import keplerGlReducer, { enhanceReduxMiddleware } from "@kepler.gl/reducers";
 import { taskMiddleware } from "react-palm/tasks";
 
-// Initialize Kepler with UI settings to hide the default sidebar
 const customizedKeplerReducer = keplerGlReducer.initialState({
   uiState: {
-    readOnly: true, // This hides the default black side panel
-    currentModal: null // Ensures no pop-ups appear on load
+    readOnly: true,
+    currentModal: null
   }
 });
 

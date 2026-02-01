@@ -1,4 +1,3 @@
-/** @type {import('tailwindcss').Config} */
 export default {
     content: [
       "./index.html",
@@ -8,8 +7,8 @@ export default {
       extend: {
         colors: {
           emerald: {
-            500: '#A7D7C4', // Your light mint green
-            900: '#064e3b', // Dark green for text
+            500: '#A7D7C4',
+            900: '#064e3b',
           }
         }
       },

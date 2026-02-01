@@ -16,6 +16,7 @@
     "@kepler.gl/reducers": "^3.2.5",
     "@turf/invariant": "^7.3.3",
     "@turf/turf": "^7.3.3",
+    "gsap": "^3.14.2",
     "kepler.gl": "^3.2.5",
     "mapbox-gl": "^3.18.1",
     "ngraph.graph": "^20.1.1",

@@ -5,7 +5,6 @@
   overflow: hidden;
 }
 
-/* Filter Sidebar - Green Theme */
 .filter-sidebar {
   position: absolute;
   top: 20px;
@@ -24,7 +23,6 @@
   transition: width 0.3s ease, padding 0.3s ease;
 }
 
-/* Collapsed Sidebar */
 .filter-sidebar.collapsed {
   width: 60px;
   padding: 20px 10px;
@@ -123,7 +121,6 @@
   background: rgba(6, 78, 59, 0.1);
 }
 
-/* Filter Sections */
 .filter-section {
   background: rgba(255, 255, 255, 0.3);
   border: 1px solid #064e3b;
@@ -166,7 +163,6 @@
   opacity: 0.85;
 }
 
-/* Material Buttons */
 .material-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -222,7 +218,6 @@
   filter: none;
 }
 
-/* Slider Container */
 .slider-container {
   display: flex;
   align-items: center;
@@ -271,7 +266,6 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Routing Section */
 .routing-section {
   margin-top: 20px;
   padding-top: 15px;
@@ -341,7 +335,6 @@
   background: #c0392b;
 }
 
-/* Route Statistics */
 .route-stats {
   margin-top: 20px;
   padding: 15px;
@@ -385,7 +378,6 @@
   font-weight: bold;
 }
 
-/* Scrollbar styling for sidebar */
 .filter-sidebar::-webkit-scrollbar {
   width: 8px;
 }
@@ -404,7 +396,6 @@
   background: #0a6b52;
 }
 
-/* Logo positioned near search bar buttons */
 .top-logo {
   position: absolute;
   top: 80px;
@@ -420,7 +411,6 @@
   object-fit: contain;
 }
 
-/* About Us button in bottom right */
 .about-us-btn {
   position: absolute;
   bottom: 20px;
@@ -443,7 +433,6 @@
   background: rgba(6, 78, 59, 0.1);
 }
 
-/* Hide Kepler.gl default legend/side panel */
 .kg-side-panel,
 [class*="side-panel"],
 [class*="layer-panel"],
@@ -451,7 +440,6 @@
   display: none !important;
 }
 
-/* Hide Kepler.gl default map control buttons (the four icons) */
 [class*="map-control"],
 [class*="map-controls"],
 [class*="map-control-button"],
@@ -462,11 +450,7 @@ div[class*="map-control"] > div {
   display: none !important;
 }
 
-/* Force emerald green color for sidewalk layer using CSS - last resort override */
 canvas[class*="deckgl"],
 svg[class*="deckgl"] {
   filter: none !important;
 }
-
-/* Try to override any blue/teal colors with emerald green using CSS filters */
-/* This is a hack but might work if Kepler.gl renders to canvas */
